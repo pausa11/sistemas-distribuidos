@@ -1,8 +1,10 @@
 import os
 from flask import Flask, request, send_from_directory, jsonify
+from flask_cors import CORS
 import requests
 
 app = Flask(__name__)
+CORS(app)
 
 # Carpeta donde almacenamos los archivos subidos en el Primario
 PRIMARY_STORAGE = "./data_primary"
