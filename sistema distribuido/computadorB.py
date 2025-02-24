@@ -1,7 +1,9 @@
 import os
 from flask import Flask, request, send_from_directory, jsonify
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 
 # Carpeta donde almacenamos los archivos que recibimos del Primario
 REPLICA_STORAGE = "./data_replica"

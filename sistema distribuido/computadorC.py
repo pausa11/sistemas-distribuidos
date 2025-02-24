@@ -1,15 +1,17 @@
 import os
 import requests
 from flask import Flask, jsonify, send_from_directory
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 
 # Carpeta donde guardamos los archivos descargados del Primario como backup
 BACKUP_STORAGE = "./data_backup"
 os.makedirs(BACKUP_STORAGE, exist_ok=True)
 
 # Sustituir por la IP o hostname y puerto del Server 1 (Primario)
-PRIMARY_URL = "http://192.168.20.12:5000"
+PRIMARY_URL = "http://192.168.137.1:5000"
 
 def do_backup():
     """

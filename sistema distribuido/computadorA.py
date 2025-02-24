@@ -11,7 +11,7 @@ PRIMARY_STORAGE = "./data_primary"
 os.makedirs(PRIMARY_STORAGE, exist_ok=True)
 
 # Sustituir por la IP o hostname y puerto del Server 2 (Réplica)
-REPLICA_URL = "http://192.168.20.12:5001"
+REPLICA_URL = "http://192.168.137.1:5001"
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
