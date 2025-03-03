@@ -5,9 +5,9 @@ function App() {
   const [fileList, setFileList] = useState([]);
 
   // Direcciones de los 3 servidores
-  const PRIMARY_SERVER_URL = "http://192.168.137.1:5000";
-  const SECONDARY_SERVER_URL = "http://192.168.137.1:5001";
-  const TERTIARY_SERVER_URL = "http://192.168.137.1:5002";
+  const PRIMARY_SERVER_URL = "http://192.168.20.12:5000";
+  const SECONDARY_SERVER_URL = "http://192.168.20.12:5001";
+  const TERTIARY_SERVER_URL = "http://192.168.20.12:5002";
 
   // Agrupamos los servidores en un array para recorrerlos en orden
   const serverUrls = [PRIMARY_SERVER_URL, SECONDARY_SERVER_URL, TERTIARY_SERVER_URL];
@@ -95,7 +95,7 @@ function App() {
 
   return (
     <div style={{ padding: "2rem", fontFamily: "sans-serif" }}>
-      <h1>Sistema Distribuido con Fallback</h1>
+      <h1>Mini sistema distribuido de almacenamiento de archivos</h1>
 
       <div style={{ marginBottom: "1rem" }}>
         <input type="file" onChange={handleFileChange} />
