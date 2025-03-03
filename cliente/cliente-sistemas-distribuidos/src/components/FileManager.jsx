@@ -12,7 +12,7 @@ function FileManager() {
   const PRIMARY_SERVER_URL = "https://maquinaa.onrender.com";   // Computador A (subida)
   const SECONDARY_SERVER_URL = "https://maquina-b.onrender.com";   // Computador B (fallback para subida, listado, descarga y eliminación)
   const TERTIARY_SERVER_URL = "https://maquinac.onrender.com";    // Computador C (listado y eliminación)
-  const FOURTH_SERVER_URL = "http://192.168.20.12:5003";      // Computador D (descarga)
+  const FOURTH_SERVER_URL = "https://sistemas-distribuidos-scrq.onrender.com";      // Computador D (descarga)
 
   // Arreglos de servidores para cada operación según los roles:
   const uploadServers = [PRIMARY_SERVER_URL, SECONDARY_SERVER_URL];
