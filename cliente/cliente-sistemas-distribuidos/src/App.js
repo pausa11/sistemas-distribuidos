@@ -88,6 +88,21 @@ function App() {
     }
   };
 
+  // Elimina un archivo con fallback
+  const handleDelete = async (filename) => {
+    try {
+      const { response, serverUrl } = await tryRequestInOrder(`/delete/${filename}`, {
+        method: "DELETE",
+      });
+      const result = await response.text();
+      console.log(`Archivo eliminado desde ${serverUrl}: ${result}`);
+      // Actualizamos la lista de archivos después de eliminar
+      fetchFileList();
+    } catch (error) {
+      console.error("Error al eliminar el archivo en todos los servidores:", error);
+    }
+  };
+
   // Al montar el componente, obtenemos la lista de archivos
   useEffect(() => {
     fetchFileList();
@@ -114,6 +129,9 @@ function App() {
               {file}{" "}
               <button onClick={() => handleDownload(file)}>
                 Descargar
+              </button>
+              <button onClick={() => handleDelete(file)} style={{ marginLeft: "8px" }}>
+                Eliminar
               </button>
             </li>
           ))}
