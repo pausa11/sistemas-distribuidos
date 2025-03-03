@@ -1,0 +1,12 @@
+{
+  "files": {
+    "main.js": "/sistemas-distribuidos/cliente/cliente-sistemas-distribuidos/static/js/main.ced166fc.js",
+    "static/js/453.0a914f87.chunk.js": "/sistemas-distribuidos/cliente/cliente-sistemas-distribuidos/static/js/453.0a914f87.chunk.js",
+    "index.html": "/sistemas-distribuidos/cliente/cliente-sistemas-distribuidos/index.html",
+    "main.ced166fc.js.map": "/sistemas-distribuidos/cliente/cliente-sistemas-distribuidos/static/js/main.ced166fc.js.map",
+    "453.0a914f87.chunk.js.map": "/sistemas-distribuidos/cliente/cliente-sistemas-distribuidos/static/js/453.0a914f87.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/js/main.ced166fc.js"
+  ]
+}

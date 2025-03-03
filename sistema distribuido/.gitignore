@@ -1,0 +1,5 @@
+.venv
+
+/data_replica
+/data_primary
+/data_backup
