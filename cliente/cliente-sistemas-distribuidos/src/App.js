@@ -5,7 +5,7 @@ function App() {
   const [fileList, setFileList] = useState([]);
 
   // Direcciones de los 3 servidores
-  const PRIMARY_SERVER_URL = "http://192.168.20.12:5000";
+  const PRIMARY_SERVER_URL = "https://maquinaa.onrender.com";
   const SECONDARY_SERVER_URL = "http://192.168.20.12:5001";
   const TERTIARY_SERVER_URL = "http://192.168.20.12:5002";
 
