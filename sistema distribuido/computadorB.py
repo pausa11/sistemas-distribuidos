@@ -17,8 +17,8 @@ def replicate():
     if 'file' not in request.files:
         return "No file part in request", 400
     file = request.files['file']
-    # filename real: en el form-data o si no, el del archivo en sí
-    filename = request.form.get('filename', file.filename)  
+    # Se utiliza el nombre del archivo enviado en form-data o el nombre del archivo mismo
+    filename = request.form.get('filename', file.filename)
     if filename == '':
         return "No filename provided", 400
 
@@ -40,6 +40,21 @@ def list_files():
     """
     files = os.listdir(REPLICA_STORAGE)
     return jsonify(files)
+
+@app.route('/delete/<filename>', methods=['DELETE'])
+def delete_file(filename):
+    """
+    Permite eliminar un archivo almacenado en la Réplica.
+    """
+    filepath = os.path.join(REPLICA_STORAGE, filename)
+    if os.path.exists(filepath):
+        try:
+            os.remove(filepath)
+            return f"Archivo '{filename}' eliminado exitosamente en la réplica.", 200
+        except Exception as e:
+            return f"Error al eliminar el archivo '{filename}': {e}", 500
+    else:
+        return f"Archivo '{filename}' no encontrado en la réplica.", 404
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))

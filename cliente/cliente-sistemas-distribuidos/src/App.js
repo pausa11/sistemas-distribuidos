@@ -6,7 +6,7 @@ function App() {
 
   // Direcciones de los 3 servidores
   const PRIMARY_SERVER_URL = "https://maquinaa.onrender.com";
-  const SECONDARY_SERVER_URL = "http://192.168.20.12:5001";
+  const SECONDARY_SERVER_URL = "https://maquina-b.onrender.com";
   const TERTIARY_SERVER_URL = "http://192.168.20.12:5002";
 
   // Agrupamos los servidores en un array para recorrerlos en orden

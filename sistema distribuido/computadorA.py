@@ -11,7 +11,7 @@ PRIMARY_STORAGE = "./data_primary"
 os.makedirs(PRIMARY_STORAGE, exist_ok=True)
 
 # Sustituir por la IP o hostname y puerto del Server 2 (Réplica)
-REPLICA_URL = "http://192.168.20.12:5001"
+REPLICA_URL = "https://maquina-b.onrender.com"
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
@@ -56,6 +56,26 @@ def list_files():
     """
     files = os.listdir(PRIMARY_STORAGE)
     return jsonify(files)
+
+@app.route('/delete/<filename>', methods=['DELETE'])
+def delete_file(filename):
+    """
+    Permite eliminar un archivo almacenado en el Primario.
+    """
+    filepath = os.path.join(PRIMARY_STORAGE, filename)
+    if os.path.exists(filepath):
+        try:
+            os.remove(filepath)
+            # Opcional: replicar la eliminación al servidor réplica
+            try:
+                requests.delete(f"{REPLICA_URL}/delete/{filename}")
+            except Exception as e:
+                print(f"Error al replicar la eliminación del archivo {filename}: {e}")
+            return f"Archivo '{filename}' eliminado correctamente.", 200
+        except Exception as e:
+            return f"Error al eliminar el archivo '{filename}': {e}", 500
+    else:
+        return f"Archivo '{filename}' no encontrado.", 404
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
