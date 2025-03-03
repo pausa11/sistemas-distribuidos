@@ -9,7 +9,7 @@ function Auth() {
   const navigate = useNavigate();
 
   // Suponemos que los endpoints de registro y login están en Computador A
-  const SERVER_URL = "http://192.168.20.12:5000";
+  const SERVER_URL = "https://maquinaa.onrender.com";
 
   // Función para registrar un usuario
   const handleRegister = async () => {
