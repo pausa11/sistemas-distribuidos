@@ -2,24 +2,28 @@ import React, { useState, useEffect } from "react";
 
 function App() {
   const [selectedFile, setSelectedFile] = useState(null);
-  const [fileList, setFileList] = useState([]);
+  const [activeFileList, setActiveFileList] = useState([]);
 
-  // Direcciones de los 3 servidores
-  const PRIMARY_SERVER_URL = "https://maquinaa.onrender.com";
-  const SECONDARY_SERVER_URL = "https://maquina-b.onrender.com";
-  const TERTIARY_SERVER_URL = "http://192.168.20.12:5002";
+  // Definición de las URLs de los servidores
+  const PRIMARY_SERVER_URL = "http://192.168.20.17:5000"; // Computador A (subida)
+  const SECONDARY_SERVER_URL = "http://192.168.20.17:5001"; // Computador B (fallback para subida, listado, descarga y eliminación)
+  const TERTIARY_SERVER_URL = "http://192.168.20.17:5002"; // Computador C (listado y eliminación)
+  const FOURTH_SERVER_URL = "http://192.168.20.17:5003"; // Computador D (descarga)
 
-  // Agrupamos los servidores en un array para recorrerlos en orden
-  const serverUrls = [PRIMARY_SERVER_URL, SECONDARY_SERVER_URL, TERTIARY_SERVER_URL];
+  // Arreglos de servidores para cada operación según los roles:
+  const uploadServers = [PRIMARY_SERVER_URL, SECONDARY_SERVER_URL];
+  const listServers = [TERTIARY_SERVER_URL, SECONDARY_SERVER_URL];
+  const downloadServers = [FOURTH_SERVER_URL, SECONDARY_SERVER_URL];
+  const deleteServers = [TERTIARY_SERVER_URL, SECONDARY_SERVER_URL];
 
-  // Maneja el cambio del input de tipo "file"
+  // Manejo del cambio en el input de tipo file
   const handleFileChange = (event) => {
     setSelectedFile(event.target.files[0]);
   };
 
-  // Función auxiliar que intenta hacer una petición a cada servidor en orden hasta que una responda correctamente
-  const tryRequestInOrder = async (endpoint, options = {}) => {
-    for (const url of serverUrls) {
+  // Función auxiliar con fallback: prueba cada servidor en el arreglo dado
+  const tryRequestInOrder = async (endpoint, options = {}, servers) => {
+    for (const url of servers) {
       try {
         const response = await fetch(`${url}${endpoint}`, options);
         if (response.ok) {
@@ -34,46 +38,52 @@ function App() {
     throw new Error(`Ningún servidor respondió para el endpoint: ${endpoint}`);
   };
 
-  // Sube el archivo seleccionado con fallback
+  // Subida: se intenta primero en Computador A, luego B
   const handleUpload = async () => {
     if (!selectedFile) {
       alert("No has seleccionado ningún archivo.");
       return;
     }
-
     const formData = new FormData();
     formData.append("file", selectedFile);
-
     try {
-      const { response, serverUrl } = await tryRequestInOrder("/upload", {
-        method: "POST",
-        body: formData,
-      });
+      const { response, serverUrl } = await tryRequestInOrder(
+        "/upload",
+        { method: "POST", body: formData },
+        uploadServers
+      );
       const result = await response.text();
-      console.log(`Respuesta del servidor (${serverUrl}):`, result);
-      // Actualizamos la lista de archivos después de subir uno nuevo
-      fetchFileList();
+      console.log(`Respuesta del servidor (${serverUrl}): ${result}`);
+      fetchActiveFileList();
     } catch (error) {
-      console.error("Error subiendo el archivo en todos los servidores:", error);
+      console.error("Error subiendo el archivo:", error);
     }
   };
 
-  // Obtiene la lista de archivos con fallback
-  const fetchFileList = async () => {
+  // Listado: se obtiene desde Computador C; si falla, se intenta con B
+  const fetchActiveFileList = async () => {
     try {
-      const { response, serverUrl } = await tryRequestInOrder("/files");
+      const { response, serverUrl } = await tryRequestInOrder(
+        "/files",
+        {},
+        listServers
+      );
       const data = await response.json();
-      setFileList(data);
-      console.log(`Lista de archivos obtenida de ${serverUrl}`);
+      setActiveFileList(data);
+      console.log(`Lista obtenida de ${serverUrl}`);
     } catch (error) {
-      console.error("Error al obtener lista de archivos en todos los servidores:", error);
+      console.error("Error obteniendo la lista de archivos:", error);
     }
   };
 
-  // Descarga un archivo con fallback (usando fetch y creando un enlace temporal)
+  // Descarga: se descarga desde Computador D; si falla, se intenta con B
   const handleDownload = async (filename) => {
     try {
-      const { response, serverUrl } = await tryRequestInOrder(`/download/${filename}`);
+      const { response, serverUrl } = await tryRequestInOrder(
+        `/download/${filename}`,
+        {},
+        downloadServers
+      );
       const blob = await response.blob();
       const downloadUrl = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -82,56 +92,54 @@ function App() {
       document.body.appendChild(a);
       a.click();
       a.remove();
-      console.log(`Archivo descargado desde ${serverUrl}`);
+      console.log(`Archivo descargado de ${serverUrl}`);
     } catch (error) {
-      console.error("Error al descargar el archivo en todos los servidores:", error);
+      console.error("Error descargando el archivo:", error);
     }
   };
 
-  // Elimina un archivo con fallback
+  // Eliminación: se elimina a través de Computador C; si falla, se recurre a B
   const handleDelete = async (filename) => {
     try {
-      const { response, serverUrl } = await tryRequestInOrder(`/delete/${filename}`, {
-        method: "DELETE",
-      });
+      const { response, serverUrl } = await tryRequestInOrder(
+        `/delete/${filename}`,
+        { method: "DELETE" },
+        deleteServers
+      );
       const result = await response.text();
-      console.log(`Archivo eliminado desde ${serverUrl}: ${result}`);
-      // Actualizamos la lista de archivos después de eliminar
-      fetchFileList();
+      console.log(`Archivo eliminado de ${serverUrl}: ${result}`);
+      fetchActiveFileList();
     } catch (error) {
-      console.error("Error al eliminar el archivo en todos los servidores:", error);
+      console.error("Error eliminando el archivo:", error);
     }
   };
 
-  // Al montar el componente, obtenemos la lista de archivos
   useEffect(() => {
-    fetchFileList();
+    fetchActiveFileList();
   }, []);
 
   return (
     <div style={{ padding: "2rem", fontFamily: "sans-serif" }}>
       <h1>Mini sistema distribuido de almacenamiento de archivos</h1>
-
       <div style={{ marginBottom: "1rem" }}>
         <input type="file" onChange={handleFileChange} />
         <button onClick={handleUpload} style={{ marginLeft: "8px" }}>
-          Subir Archivo
+          Subir Archivo (Computador A)
         </button>
       </div>
-
-      <h2>Archivos (fallback automático)</h2>
-      {fileList.length === 0 ? (
+      <h2>Archivos Activos (Listado desde C, fallback B)</h2>
+      {activeFileList.length === 0 ? (
         <p>No hay archivos disponibles.</p>
       ) : (
         <ul>
-          {fileList.map((file) => (
+          {activeFileList.map((file) => (
             <li key={file} style={{ margin: "8px 0" }}>
               {file}{" "}
               <button onClick={() => handleDownload(file)}>
-                Descargar
+                Descargar (D, fallback B)
               </button>
               <button onClick={() => handleDelete(file)} style={{ marginLeft: "8px" }}>
-                Eliminar
+                Eliminar (C, fallback B)
               </button>
             </li>
           ))}
