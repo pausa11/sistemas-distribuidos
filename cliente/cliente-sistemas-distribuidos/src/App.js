@@ -5,8 +5,8 @@ function App() {
   const [activeFileList, setActiveFileList] = useState([]);
 
   // Definición de las URLs de los servidores
-  const PRIMARY_SERVER_URL = "http://192.168.20.17:5000"; // Computador A (subida)
-  const SECONDARY_SERVER_URL = "http://192.168.20.17:5001"; // Computador B (fallback para subida, listado, descarga y eliminación)
+  const PRIMARY_SERVER_URL = "https://maquinaa.onrender.com"; // Computador A (subida)
+  const SECONDARY_SERVER_URL = "https://maquina-b.onrender.com"; // Computador B (fallback para subida, listado, descarga y eliminación)
   const TERTIARY_SERVER_URL = "http://192.168.20.17:5002"; // Computador C (listado y eliminación)
   const FOURTH_SERVER_URL = "http://192.168.20.17:5003"; // Computador D (descarga)
 
