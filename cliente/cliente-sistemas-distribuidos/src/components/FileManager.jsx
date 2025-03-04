@@ -9,10 +9,10 @@ function FileManager() {
   const [activeFileList, setActiveFileList] = useState([]);
 
   // Definición de las URLs de los servidores
-  const PRIMARY_SERVER_URL = "https://maquinaa.onrender.com";   // Computador A (subida)
-  const SECONDARY_SERVER_URL = "https://maquina-b.onrender.com";   // Computador B (fallback para subida, listado, descarga y eliminación)
-  const TERTIARY_SERVER_URL = "https://maquinac.onrender.com";    // Computador C (listado y eliminación)
-  const FOURTH_SERVER_URL = "https://sistemas-distribuidos-scrq.onrender.com";      // Computador D (descarga)
+  const PRIMARY_SERVER_URL = "https://maquinaa.onrender.com"; // Computador A (subida)
+  const SECONDARY_SERVER_URL = "https://maquina-b.onrender.com"; // Computador B (fallback para subida, listado, descarga y eliminación)
+  const TERTIARY_SERVER_URL = "https://maquinac.onrender.com"; // Computador C (listado y eliminación)
+  const FOURTH_SERVER_URL = "https://sistemas-distribuidos-scrq.onrender.com"; // Computador D (descarga)
 
   // Arreglos de servidores para cada operación según los roles:
   const uploadServers = [PRIMARY_SERVER_URL, SECONDARY_SERVER_URL];
@@ -134,30 +134,44 @@ function FileManager() {
     if (userId) {
       fetchActiveFileList();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
 
   return (
-    <div style={{ padding: "2rem", fontFamily: "sans-serif" }}>
-      <h1>File Manager</h1>
-      <div style={{ marginBottom: "1rem" }}>
-        <input type="file" onChange={handleFileChange} />
-        <button onClick={handleUpload} style={{ marginLeft: "8px" }}>
-          Upload File (Computador A)
+    <div className="p-8 font-sans">
+      <h1 className="text-3xl font-bold mb-4">File Manager</h1>
+      <div className="mb-4">
+        <input 
+          type="file" 
+          onChange={handleFileChange} 
+          className="border border-gray-300 p-2 rounded"
+        />
+        <button 
+          onClick={handleUpload} 
+          className="ml-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+        >
+          Upload File
         </button>
       </div>
-      <h2>Active Files (Listado desde C, fallback B)</h2>
+      <h2 className="text-2xl font-semibold mb-2">Active Files</h2>
       {activeFileList.length === 0 ? (
         <p>No files available.</p>
       ) : (
         <ul>
           {activeFileList.map((file) => (
-            <li key={file} style={{ margin: "8px 0" }}>
-              {file}{" "}
-              <button onClick={() => handleDownload(file)}>
-                Download (D, fallback B)
+            <li key={file} className="mb-2">
+              {file} 
+              <button 
+                onClick={() => handleDownload(file)}
+                className="ml-2 px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
+              >
+                Download
               </button>
-              <button onClick={() => handleDelete(file)} style={{ marginLeft: "8px" }}>
-                Delete (C, fallback B)
+              <button 
+                onClick={() => handleDelete(file)}
+                className="ml-2 px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
+              >
+                Delete
               </button>
             </li>
           ))}
@@ -165,6 +179,7 @@ function FileManager() {
       )}
     </div>
   );
+  
 }
 
 export default FileManager;

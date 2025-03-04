@@ -53,25 +53,31 @@ function Auth() {
   };
 
   return (
-    <div style={{ padding: "2rem", fontFamily: "sans-serif" }}>
-      <h2>{isRegister ? "Register" : "Login"}</h2>
-      <div style={{ marginBottom: "1rem" }}>
+    <div className="p-8 font-sans">
+      <h2 className="text-2xl font-bold mb-4">
+        {isRegister ? "Register" : "Login"}
+      </h2>
+      <div className="mb-4">
         <input
           type="text"
           placeholder="Username"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
-          style={{ marginRight: "8px" }}
+          className="mr-2 p-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
         />
         <input
           type="password"
           placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          className="p-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
         />
       </div>
       <div>
-        <button onClick={isRegister ? handleRegister : handleLogin}>
+        <button
+          onClick={isRegister ? handleRegister : handleLogin}
+          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+        >
           {isRegister ? "Register" : "Login"}
         </button>
         <button
@@ -79,14 +85,15 @@ function Auth() {
             setIsRegister(!isRegister);
             setMessage("");
           }}
-          style={{ marginLeft: "8px" }}
+          className="ml-2 px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors"
         >
           {isRegister ? "Go to Login" : "Go to Register"}
         </button>
       </div>
-      {message && <p>{message}</p>}
+      {message && <p className="mt-4 text-red-500">{message}</p>}
     </div>
   );
+  
 }
 
 export default Auth;
