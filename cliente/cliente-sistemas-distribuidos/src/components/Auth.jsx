@@ -8,17 +8,41 @@ function Auth() {
   const [message, setMessage] = useState("");
   const navigate = useNavigate();
 
-  // Suponemos que los endpoints de registro y login están en Computador A
+  // Endpoints: Computador A y réplica
   const SERVER_URL = "https://maquinaa.onrender.com";
+  const REPLICATION_URL = "https://sistemas-distribuidos-1.onrender.com";
+
+  // Función auxiliar para intentar una petición en ambos servidores
+  const tryRequest = async (path, options) => {
+    // Primero intenta en Computador A
+    try {
+      let response = await fetch(`${SERVER_URL}${path}`, options);
+      // Si la respuesta no es ok y el error es del servidor, se intenta el replica
+      if (!response.ok && response.status >= 500) {
+        throw new Error("Primary server error");
+      }
+      return response;
+    } catch (error) {
+      // Intenta en el servidor de réplica
+      try {
+        let response = await fetch(`${REPLICATION_URL}${path}`, options);
+        return response;
+      } catch (error2) {
+        throw new Error("Error on both servers: " + error2.message);
+      }
+    }
+  };
 
   // Función para registrar un usuario
   const handleRegister = async () => {
+    const options = {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password }),
+    };
+
     try {
-      const response = await fetch(`${SERVER_URL}/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
-      });
+      const response = await tryRequest("/register", options);
       const data = await response.json();
       if (response.ok) {
         setMessage(data.message);
@@ -33,12 +57,14 @@ function Auth() {
 
   // Función para loguear un usuario
   const handleLogin = async () => {
+    const options = {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password }),
+    };
+
     try {
-      const response = await fetch(`${SERVER_URL}/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
-      });
+      const response = await tryRequest("/login", options);
       const data = await response.json();
       if (response.ok) {
         setMessage(data.message);
@@ -93,7 +119,6 @@ function Auth() {
       {message && <p className="mt-4 text-red-500">{message}</p>}
     </div>
   );
-  
 }
 
 export default Auth;

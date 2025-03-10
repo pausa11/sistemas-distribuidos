@@ -13,9 +13,11 @@ function FileManager() {
   const SECONDARY_SERVER_URL = "https://maquina-b.onrender.com"; // Computador B (fallback para subida, listado, descarga y eliminación)
   const TERTIARY_SERVER_URL = "https://maquinac.onrender.com"; // Computador C (listado y eliminación)
   const FOURTH_SERVER_URL = "https://sistemas-distribuidos-scrq.onrender.com"; // Computador D (descarga)
+  const FIFTH_SERVER_URL = "https://sistemas-distribuidos-1.onrender.com"; // Computador E (fallback para subida)
 
   // Arreglos de servidores para cada operación según los roles:
-  const uploadServers = [PRIMARY_SERVER_URL, SECONDARY_SERVER_URL];
+  // Se añadió el FIFTH_SERVER_URL al arreglo de subida para tener un fallback adicional
+  const uploadServers = [PRIMARY_SERVER_URL, SECONDARY_SERVER_URL, FIFTH_SERVER_URL];
   const listServers = [TERTIARY_SERVER_URL, SECONDARY_SERVER_URL];
   const downloadServers = [FOURTH_SERVER_URL, SECONDARY_SERVER_URL];
   const deleteServers = [TERTIARY_SERVER_URL, SECONDARY_SERVER_URL];
@@ -42,7 +44,8 @@ function FileManager() {
     throw new Error(`Ningún servidor respondió para el endpoint: ${endpoint}`);
   };
 
-  // Subida: se intenta primero en Computador A, luego en B. Se envía el user_id.
+  // Subida: se intenta primero en Computador A, luego en B y finalmente en E.
+  // Se envía el user_id.
   const handleUpload = async () => {
     if (!selectedFile) {
       alert("No has seleccionado ningún archivo.");
@@ -179,7 +182,6 @@ function FileManager() {
       )}
     </div>
   );
-  
 }
 
 export default FileManager;
