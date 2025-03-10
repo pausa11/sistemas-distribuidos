@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 function FileManager() {
   const location = useLocation();
   const { userId } = location.state || {}; // Se espera que se haya pasado el userId al navegar
-  
+  const navigate = useNavigate();
+
   const [selectedFile, setSelectedFile] = useState(null);
   const [activeFileList, setActiveFileList] = useState([]);
+  const [previewMap, setPreviewMap] = useState({}); // Mapea nombre de archivo a URL de vista previa
 
   // Definición de las URLs de los servidores
   const PRIMARY_SERVER_URL = "https://maquinaa.onrender.com"; // Computador A (subida)
@@ -67,6 +69,8 @@ function FileManager() {
       const result = await response.text();
       console.log(`Respuesta del servidor (${serverUrl}): ${result}`);
       fetchActiveFileList();
+      // Limpiar selección y vista previa
+      setSelectedFile(null);
     } catch (error) {
       console.error("Error subiendo el archivo:", error);
     }
@@ -92,6 +96,39 @@ function FileManager() {
       console.error("Error obteniendo la lista de archivos:", error);
     }
   };
+
+  // Función para obtener la vista previa de un archivo (si es imagen)
+  const fetchPreviewUrl = async (fileName) => {
+    try {
+      const { response } = await tryRequestInOrder(
+        `/download/${fileName}?user_id=${userId}`,
+        {},
+        downloadServers
+      );
+      const blob = await response.blob();
+      return URL.createObjectURL(blob);
+    } catch (error) {
+      console.error("Error fetching preview for file", fileName, error);
+      return null;
+    }
+  };
+
+  // Cuando se actualice la lista de archivos, se intenta obtener la vista previa para aquellos que sean imágenes.
+  useEffect(() => {
+    const imageExtensions = [".jpg", ".jpeg", ".png", ".gif"];
+    activeFileList.forEach(async (file) => {
+      const lower = file.toLowerCase();
+      if (
+        imageExtensions.some((ext) => lower.endsWith(ext)) &&
+        !previewMap[file]
+      ) {
+        const previewUrl = await fetchPreviewUrl(file);
+        if (previewUrl) {
+          setPreviewMap((prev) => ({ ...prev, [file]: previewUrl }));
+        }
+      }
+    });
+  }, [activeFileList, userId, previewMap]);
 
   // Descarga: se descarga desde Computador D; si falla, se intenta con B.
   // Se pasa user_id opcionalmente para confirmar que el usuario tiene acceso.
@@ -127,6 +164,12 @@ function FileManager() {
       );
       const result = await response.text();
       console.log(`Archivo eliminado de ${serverUrl}: ${result}`);
+      // Si se eliminó un archivo, se elimina también su vista previa
+      setPreviewMap((prev) => {
+        const copy = { ...prev };
+        delete copy[filename];
+        return copy;
+      });
       fetchActiveFileList();
     } catch (error) {
       console.error("Error eliminando el archivo:", error);
@@ -142,15 +185,24 @@ function FileManager() {
 
   return (
     <div className="p-8 font-sans">
-      <h1 className="text-3xl font-bold mb-4">File Manager</h1>
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-3xl font-bold">File Manager</h1>
+        <button
+          onClick={() => navigate("/login")}
+          className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors"
+        >
+          Volver al Login
+        </button>
+      </div>
+      {userId && <p className="mb-4 text-lg">User ID: {userId}</p>}
       <div className="mb-4">
-        <input 
-          type="file" 
-          onChange={handleFileChange} 
+        <input
+          type="file"
+          onChange={handleFileChange}
           className="border border-gray-300 p-2 rounded"
         />
-        <button 
-          onClick={handleUpload} 
+        <button
+          onClick={handleUpload}
           className="ml-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
         >
           Upload File
@@ -162,20 +214,31 @@ function FileManager() {
       ) : (
         <ul>
           {activeFileList.map((file) => (
-            <li key={file} className="mb-2">
-              {file} 
-              <button 
-                onClick={() => handleDownload(file)}
-                className="ml-2 px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
-              >
-                Download
-              </button>
-              <button 
-                onClick={() => handleDelete(file)}
-                className="ml-2 px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
-              >
-                Delete
-              </button>
+            <li key={file} className="mb-4 flex items-center">
+              <div className="flex-1">
+                <p className="font-medium">{file}</p>
+                {previewMap[file] && (
+                  <img
+                    src={previewMap[file]}
+                    alt="Preview"
+                    className="mt-1 max-w-[150px] rounded border"
+                  />
+                )}
+              </div>
+              <div>
+                <button
+                  onClick={() => handleDownload(file)}
+                  className="ml-2 px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
+                >
+                  Download
+                </button>
+                <button
+                  onClick={() => handleDelete(file)}
+                  className="ml-2 px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
+                >
+                  Delete
+                </button>
+              </div>
             </li>
           ))}
         </ul>
