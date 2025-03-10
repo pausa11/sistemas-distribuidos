@@ -10,15 +10,21 @@ from sqlalchemy.orm import sessionmaker, relationship
 app = Flask(__name__)
 CORS(app)
 
-# Configura la cadena de conexión a PostgreSQL
+# Cadenas de conexión para ambas bases de datos
 DATABASE_URL = os.environ.get(
     "DATABASE_URL",
     "postgresql://sistemas_distribuidos_19ua_user:Qjs6iBx8Zr08xJ7Kg8N5dstODvNepO74@dpg-cv27unnnoe9s73auj4c0-a.oregon-postgres.render.com/sistemas_distribuidos_19ua"
 )
+DATABASE2_URL = os.environ.get(
+    "DATABASE2_URL",
+    "postgresql://sistema_distribuido_2_user:r7LwJZ3AGOXSgHmp9oaizJeMT6c7pGYR@dpg-cv2ufofnoe9s73bbblr0-a.oregon-postgres.render.com/sistema_distribuido_2"
+)
 
-# Configuración de SQLAlchemy
+# Configuración de SQLAlchemy para ambas conexiones
 engine = create_engine(DATABASE_URL)
+engine2 = create_engine(DATABASE2_URL)
 SessionLocal = sessionmaker(bind=engine)
+SessionLocal2 = sessionmaker(bind=engine2)
 Base = declarative_base()
 
 # Modelo de Usuario
@@ -39,88 +45,107 @@ class BackupFile(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     owner = relationship("User", back_populates="files")
 
-# Crear las tablas si no existen
+# Crear las tablas en ambas bases de datos
 Base.metadata.create_all(bind=engine)
-
-# Endpoint para replicar archivos (operación de subida)
-# Se espera que el formulario incluya "user_id" para asociar el archivo a un usuario.
-@app.route('/replicate', methods=['POST'])
-def replicate():
-    if 'file' not in request.files:
-        return "No file part in request", 400
-    file = request.files['file']
-    filename = request.form.get('filename', file.filename)
-    if filename == '':
-        return "No filename provided", 400
-    user_id = request.form.get("user_id")
-    if not user_id:
-        return "No user specified", 400
-
-    try:
-        file_data = file.read()
-    except Exception as e:
-        return f"Error al leer el archivo: {e}", 500
-
-    session = SessionLocal()
-    new_file = BackupFile(filename=filename, file_data=file_data, user_id=int(user_id))
-    try:
-        session.add(new_file)
-        session.commit()
-    except Exception as e:
-        session.rollback()
-        return f"Error al replicar el archivo '{filename}': {e}", 500
-    finally:
-        session.close()
-
-    return f"Archivo '{filename}' replicado exitosamente en la base de datos.", 200
-
-# Endpoint para descargar archivos.
-# Nota: En este ejemplo no se filtra por usuario para la descarga; en un entorno real, podrías agregar comprobaciones.
-@app.route('/download/<filename>', methods=['GET'])
-def download_file(filename):
-    session = SessionLocal()
-    backup_file = session.query(BackupFile).filter(BackupFile.filename == filename).first()
-    session.close()
-    if backup_file:
-        return send_file(BytesIO(backup_file.file_data), as_attachment=True, download_name=filename)
-    else:
-        return jsonify({"error": "Archivo no encontrado"}), 404
+Base.metadata.create_all(bind=engine2)
 
 # Endpoint para listar archivos de un usuario.
-# Se espera recibir el parámetro "user_id" en la query string.
+# Se intenta primero en la DB1 y si falla se consulta en la DB2.
 @app.route('/files', methods=['GET'])
 def list_files():
     user_id = request.args.get("user_id")
     if not user_id:
         return jsonify({"error": "Parámetro user_id requerido"}), 400
-    session = SessionLocal()
-    files = session.query(BackupFile).filter(BackupFile.user_id == int(user_id)).all()
-    session.close()
-    filenames = [file.filename for file in files]
-    return jsonify(filenames)
+    try:
+        session = SessionLocal()
+        files = session.query(BackupFile).filter(BackupFile.user_id == int(user_id)).all()
+        session.close()
+        filenames = [file.filename for file in files]
+        return jsonify(filenames)
+    except Exception as e:
+        # Si ocurre un error con DB1, se intenta con DB2
+        try:
+            session2 = SessionLocal2()
+            files = session2.query(BackupFile).filter(BackupFile.user_id == int(user_id)).all()
+            session2.close()
+            filenames = [file.filename for file in files]
+            return jsonify(filenames)
+        except Exception as e2:
+            return jsonify({"error": "Error al obtener archivos de ambas bases de datos"}), 500
 
-# Endpoint para eliminar un archivo.
-# Se espera que se reciba el parámetro "user_id" en la query string para comprobar la propiedad del archivo.
+# Endpoint para eliminar un archivo en ambas bases de datos.
 @app.route('/delete/<filename>', methods=['DELETE'])
 def delete_file(filename):
     user_id = request.args.get("user_id")
     if not user_id:
         return jsonify({"error": "Parámetro user_id requerido"}), 400
+
+    errors = []
+    deleted_db1 = False
+    deleted_db2 = False
+
+    # Eliminación en DB1
     session = SessionLocal()
-    backup_file = session.query(BackupFile).filter(BackupFile.filename == filename, BackupFile.user_id == int(user_id)).first()
-    if backup_file:
+    backup_file_db1 = session.query(BackupFile).filter(
+        BackupFile.filename == filename, BackupFile.user_id == int(user_id)
+    ).first()
+    if backup_file_db1:
         try:
-            session.delete(backup_file)
+            session.delete(backup_file_db1)
             session.commit()
-            return f"Archivo '{filename}' eliminado exitosamente.", 200
+            deleted_db1 = True
         except Exception as e:
             session.rollback()
-            return f"Error al eliminar el archivo '{filename}': {e}", 500
+            errors.append(f"Error eliminando en DB1: {e}")
         finally:
             session.close()
     else:
         session.close()
-        return f"Archivo '{filename}' no encontrado.", 404
+        errors.append("Archivo no encontrado en DB1")
+
+    # Eliminación en DB2
+    session2 = SessionLocal2()
+    backup_file_db2 = session2.query(BackupFile).filter(
+        BackupFile.filename == filename, BackupFile.user_id == int(user_id)
+    ).first()
+    if backup_file_db2:
+        try:
+            session2.delete(backup_file_db2)
+            session2.commit()
+            deleted_db2 = True
+        except Exception as e:
+            session2.rollback()
+            errors.append(f"Error eliminando en DB2: {e}")
+        finally:
+            session2.close()
+    else:
+        session2.close()
+        errors.append("Archivo no encontrado en DB2")
+
+    if not deleted_db1 and not deleted_db2:
+        return jsonify({"error": errors}), 404
+    if errors:
+        return jsonify({
+            "message": f"Archivo '{filename}' eliminado en una o más bases, pero con errores.",
+            "errors": errors
+        }), 200
+    return jsonify({"message": f"Archivo '{filename}' eliminado correctamente en ambas bases."}), 200
+
+# Endpoint para descargar un archivo.
+# Se intenta primero en la DB1 y, si no se encuentra, se consulta en la DB2.
+@app.route('/download/<filename>', methods=['GET'])
+def download_file(filename):
+    session = SessionLocal()
+    backup_file = session.query(BackupFile).filter(BackupFile.filename == filename).first()
+    session.close()
+    if not backup_file:
+        session2 = SessionLocal2()
+        backup_file = session2.query(BackupFile).filter(BackupFile.filename == filename).first()
+        session2.close()
+    if backup_file:
+        return send_file(BytesIO(backup_file.file_data), as_attachment=True, download_name=filename)
+    else:
+        return jsonify({"error": "Archivo no encontrado"}), 404
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5001))

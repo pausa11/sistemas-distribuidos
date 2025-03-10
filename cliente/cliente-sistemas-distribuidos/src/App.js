@@ -9,7 +9,6 @@ function App() {
       <Routes>
         <Route path="/login" element={<Auth />} />
         <Route path="/files" element={<FileManager />} />
-        {/* Ruta por defecto redirige al login */}
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </HashRouter>
